@@ -53,6 +53,17 @@
             instance_port:      80
       register: my_elb
 
+    - name: Destroy the target group
+      elb_target_group:
+        name:                     "{{ app_name }}-tg"
+        state:                    "{{ state }}"
+        region:                   "{{ aws_region }}"
+        vpc_id:                   "{{ vpc_id }}"
+        protocol:                 HTTP
+        port:                     80
+      register: tg
+
+
     # Gather facts about all VPCs
     - name: Gather facts about our VPC
       ec2_vpc_net_facts:
@@ -108,6 +119,25 @@
         region:           "{{ aws_region }}"
         state:            "{{ state }}"
       register: my_vpc_igw
+
+    - name: Destroy the Application Security Group
+      ec2_group:
+        name:             "app-security-group"
+        description:      "app security group"
+        vpc_id:           "{{ vpc_id }}"
+        region:           "{{ aws_region }}"
+        state:            "{{ state }}"
+        rules:
+          - proto:        "tcp"
+            from_port:    "22"
+            to_port:      "22"
+            cidr_ip:      "{{ source_ip_range }}"
+          - proto:        "tcp"
+            from_port:    "80"
+            to_port:      "80"
+            group_id:      "{{ lb_sg_id }}"
+      register: my_vpc_sg
+
 
     - name: Destroy the Web Security Group
       ec2_group:
