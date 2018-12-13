@@ -9,7 +9,7 @@ sudo chown -R ubuntu:ubuntu /var/www/devops_app
 sudo rm /etc/nginx/sites-enabled/default
 sudo ln -s /var/www/devops_app/web/devops_app.conf /etc/nginx/conf.d/
 sudo /etc/init.d/nginx restart
-sudo su -c 'cd /var/www/devops_app/app' - ubuntu
+cd /var/www/devops_app/app
 sudo su -c 'virtualenv venv' - ubuntu
 sudo su -c 'source venv/bin/activate' - ubuntu
 sudo su -c 'pip install -r /var/www/devops_app/app/requirements.txt' - ubuntu
