@@ -97,10 +97,6 @@
         state:            "{{ state }}"
         rules:
           - proto:        "tcp"
-            from_port:    "22"
-            to_port:      "22"
-            cidr_ip:      "{{ source_ip_range }}"
-          - proto:        "tcp"
             from_port:    "80"
             to_port:      "80"
             cidr_ip:      "{{ source_ip_range }}"
@@ -108,16 +104,56 @@
 
     - name:               Set Security Group ID in variable
       set_fact:
-        sg_id:           "{{ my_vpc_sg.group_id }}"
+        lb_sg_id:           "{{ my_vpc_sg.group_id }}"
+
+    # Creating the Security group. This governs traffic for both LBR and EC2 instances
+    - name:               Create Application Security Group
+      ec2_group:
+        name:             "web-security-group"
+        description:      "web security group"
+        vpc_id:           "{{ vpc_id }}"
+        region:           "{{ aws_region }}"
+        state:            "{{ state }}"
+        rules:
+          - proto:        "tcp"
+            from_port:    "22"
+            to_port:      "22"
+            cidr_ip:      "{{ source_ip_range }}"
+          - proto:        "tcp"
+            from_port:    "80"
+            to_port:      "80"
+            group_id:      "{{ lb_sg_id }}"
+      register: my_vpc_sg
+
+    - name:               Set Security Group ID in variable
+      set_fact:
+        app_sg_id:           "{{ my_vpc_sg.group_id }}"
+
+    - name: Create a new target group
+      elb_target_group:
+        name:                     "{{ app_name }}-tg"
+        state:                    "{{ state }}"
+        region:                   "{{ aws_region }}"
+        vpc_id:                   "{{ vpc_id }}"
+        protocol:                 HTTP
+        port:                     80
+        #health_check_interval:    '{{ health_check_interval }}'
+        #health_check_path:        '{{ health_check_path }}'
+        #health_check_port:        '{{ health_check_port }}'
+        #health_check_protocol:    '{{ health_check_protocol }}'
+        #health_check_timeout:     '{{ health_check_timeout }}'
+        #healthy_threshold_count:  '{{ healthy_threshold_count }}'
+        #unhealthy_threshold_count:'{{ unhealthy_threshold_count }}'
+      register: tg
+
 
     # Creating a Elastic Load Balancer required for HA deployments
     - name: Create the ELB only listening over port 80
-      tags:
-         - stop_first
-      ec2_elb_lb:
+      elb_application_lb:
         name:             "{{ app_name }}-lb"
         state:            "{{ state }}"
         region:           "{{ aws_region }}"
+        security_groups:  ["{{ lb_sg_id }}"]
         subnets:
         - "{{ public_subnet1_id }}"
         - "{{ public_subnet2_id }}"
@@ -125,9 +161,11 @@
 #        - "{{ aws_region }}a"
 #        - "{{ aws_region }}b"
         listeners:
-          - protocol:           http
-            load_balancer_port: 80
-            instance_port:      80
+          - Protocol:           HTTP
+            Port:               80
+            DefaultActions:
+              - Type: forward
+                TargetGroupName: "{{ tg.target_group_name}}"
       register: my_elb
 
    # We will also setup a AutoScaling group. The solution can be futher improved by adding scaling policies
@@ -138,7 +176,7 @@
           name:                   "{{ app_name }}-lc"
           image_id:               "{{ ami_id }}"
           key_name:               "{{ key_name }}"
-          security_groups:        ["{{ sg_id }}"]
+          security_groups:        ["{{ app_sg_id }}"]
           instance_type:          "{{ instance_type }}"
           state:                  "{{ state }}"
           vpc_id:                 "{{ vpc_id }}"
@@ -152,7 +190,8 @@
          - stop_first
       ec2_asg:
         name:                   "{{ app_name }}"
-        load_balancers:         "{{ app_name }}-lb"
+        #load_balancers:         "{{ app_name }}-lb"
+        target_group_arns:      "{{ tg.target_group_arn }}"
         availability_zones:     [ "{{ aws_region }}a", "{{ aws_region }}b" ]
         region:                 "{{ aws_region }}"
         state:                  "{{ state }}"
