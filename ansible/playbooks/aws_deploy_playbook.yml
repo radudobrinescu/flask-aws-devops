@@ -109,8 +109,8 @@
     # Creating the Security group. This governs traffic for both LBR and EC2 instances
     - name:               Create Application Security Group
       ec2_group:
-        name:             "web-security-group"
-        description:      "web security group"
+        name:             "app-security-group"
+        description:      "app security group"
         vpc_id:           "{{ vpc_id }}"
         region:           "{{ aws_region }}"
         state:            "{{ state }}"
