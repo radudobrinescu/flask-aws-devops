@@ -9,10 +9,10 @@ sudo chown -R ubuntu:ubuntu /var/www/devops_app
 sudo rm /etc/nginx/sites-enabled/default
 sudo ln -s /var/www/devops_app/web/devops_app.conf /etc/nginx/conf.d/
 sudo /etc/init.d/nginx restart
-cd /var/www/devops_app/app
-virtualenv venv
-source venv/bin/activate
-pip install -r /var/www/devops_app/app/requirements.txt
+sudo su -c 'cd /var/www/devops_app/app' - ubuntu
+sudo su -c 'virtualenv venv' - ubuntu
+sudo su -c 'source venv/bin/activate' - ubuntu
+sudo su -c 'pip install -r /var/www/devops_app/app/requirements.txt' - ubuntu
 sudo mkdir /var/log/uwsgi
 sudo chown ubuntu:ubuntu /var/log/uwsgi
 uwsgi --ini /var/www/devops_app/web/devops_uwsgi.ini
