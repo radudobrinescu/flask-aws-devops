@@ -1,0 +1,176 @@
+---
+### Playbook to provision the AWS infrastructure for the devops_challenge Application
+### There is no mapping of AMIs to regions in the variable file - so the playbook will only work in eu-central-1
+
+- hosts: localhost
+  connection: local
+  gather_facts: false
+  user: root
+  pre_tasks:
+    - include_vars: ../group_vars/variables.yml
+  tasks:
+    # Firstly creating a new VPC for the Application
+    - name:               Create VPC
+      tags:
+        - stop_second
+      ec2_vpc_net:
+        name:             "{{ vpc_name }}"
+        cidr_block:       "{{ vpc_cidr_block }}"
+        region:           "{{ aws_region }}"
+        state:            "{{ state }}"
+      register: my_vpc
+
+    # Saving the id of the VPC for later tasks
+    - name:               Set VPC ID in variable
+      set_fact:
+        vpc_id:           "{{ my_vpc.vpc.id }}"
+
+    # Creating 2 subnets for HA. Each subnet will be in a Availability Zone
+    - name:               Create Subnet 1
+      ec2_vpc_subnet:
+        state:            "{{ state }}"
+        vpc_id:           "{{ vpc_id }}"
+        cidr:             "{{ public_subnet_1_cidr }}"
+        az:               "{{ aws_region }}a"
+        region:           "{{ aws_region }}"
+        resource_tags:
+                Name:     "pub_subnet1"
+      register: my_public_subnet_1
+
+    - name:               Create Subnet 2
+      ec2_vpc_subnet:
+        state:            "{{ state }}"
+        vpc_id:           "{{ vpc_id }}"
+        cidr:             "{{ public_subnet_2_cidr }}"
+        az:               "{{ aws_region }}b"
+        region:           "{{ aws_region }}"
+        resource_tags:
+                Name:     "pub_subnet2"
+      register: my_public_subnet_2
+
+    # Saving the IDs of the subnets in variables.
+    - name: Set Subnet1 ID in variable
+      set_fact:
+        public_subnet1_id: "{{ my_public_subnet_1.subnet.id }}"
+
+    - name: Set Subnet2 ID in variable
+      set_fact:
+        public_subnet2_id: "{{ my_public_subnet_2.subnet.id }}"
+
+    # Every VPC needs at least one Internet Gateway.
+    # This component allows traffic between the VPC and the outside world.
+    - name:               Create Internet Gateway for VPC
+      ec2_vpc_igw:
+        vpc_id:           "{{ vpc_id }}"
+        region:           "{{ aws_region }}"
+        state:            "{{ state }}"
+      register: my_vpc_igw
+
+    # We save the id of the Internet Gateway in a new variable.
+    - name:               Set Internet Gateway ID in variable
+      set_fact:
+        igw_id:           "{{ my_vpc_igw.gateway_id }}"
+
+
+    # Now we set up a Route Table.
+    - name:               Set up public subnet route table
+      ec2_vpc_route_table:
+        vpc_id:           "{{ vpc_id }}"
+        region:           "{{ aws_region }}"
+        tags:
+          Name:           "Public"
+        subnets:
+          - "{{ public_subnet1_id }}"
+          - "{{ public_subnet2_id }}"
+        routes:
+          - dest:         "0.0.0.0/0"
+            gateway_id:   "{{ igw_id }}"
+
+
+    # Creating the Security group. This governs traffic for both LBR and EC2 instances
+    - name:               Create Web Security Group
+      ec2_group:
+        name:             "web-security-group"
+        description:      "web security group"
+        vpc_id:           "{{ vpc_id }}"
+        region:           "{{ aws_region }}"
+        state:            "{{ state }}"
+        rules:
+          - proto:        "tcp"
+            from_port:    "22"
+            to_port:      "22"
+            cidr_ip:      "{{ source_ip_range }}"
+          - proto:        "tcp"
+            from_port:    "80"
+            to_port:      "80"
+            cidr_ip:      "{{ source_ip_range }}"
+      register: my_vpc_sg
+
+    - name:               Set Security Group ID in variable
+      set_fact:
+        sg_id:           "{{ my_vpc_sg.group_id }}"
+
+    # Creating a Elastic Load Balancer required for HA deployments
+    - name: Create the ELB only listening over port 80
+      tags:
+         - stop_first
+      ec2_elb_lb:
+        name:             "{{ app_name }}-lb"
+        state:            "{{ state }}"
+        region:           "{{ aws_region }}"
+        subnets:
+        - "{{ public_subnet1_id }}"
+        - "{{ public_subnet2_id }}"
+#        zones:
+#        - "{{ aws_region }}a"
+#        - "{{ aws_region }}b"
+        listeners:
+          - protocol:           http
+            load_balancer_port: 80
+            instance_port:      80
+      register: my_elb
+
+   # We will also setup a AutoScaling group. The solution can be futher improved by adding scaling policies
+    - name: Create new Launch Configuration
+      tags:
+         - stop_first
+      ec2_lc:
+          name:                   "{{ app_name }}-lc"
+          image_id:               "{{ ami_id }}"
+          key_name:               "{{ key_name }}"
+          security_groups:        ["{{ sg_id }}"]
+          instance_type:          "{{ instance_type }}"
+          state:                  "{{ state }}"
+          vpc_id:                 "{{ vpc_id }}"
+          assign_public_ip:       "yes"
+          region:                 "{{ aws_region }}"
+      register: my_lc
+
+
+    - name: Create an AutoScaling Group
+      tags:
+         - stop_first
+      ec2_asg:
+        name:                   "{{ app_name }}"
+        load_balancers:         "{{ app_name }}-lb"
+        availability_zones:     [ "{{ aws_region }}a", "{{ aws_region }}b" ]
+        region:                 "{{ aws_region }}"
+        state:                  "{{ state }}"
+        launch_config_name:     "{{ app_name }}-lc"
+        min_size:               1
+        max_size:               4
+        desired_capacity:       2
+        vpc_zone_identifier: [ "{{ public_subnet1_id }}", "{{ public_subnet2_id }}" ]
+      register: my_asg
+
+
+# Amazon instance is set up and running. We can now apply roles to it
+#  - name: Configure the instance
+#    hosts: launched
+#    sudo: yes
+#    remote_user: ubuntu
+#    gather_facts: yes
+#    roles:
+#      - common
+#      - nginx
+#      - flask-dummy

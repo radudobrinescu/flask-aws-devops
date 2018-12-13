@@ -1,0 +1,138 @@
+---
+### Playbook to provision the AWS infrastructure for the Application
+### There is no mapping of AMIs to regions in the variable file - only eu-central-1 region at this timeout
+
+- hosts: localhost
+  connection: local
+  gather_facts: false
+  user: root
+  pre_tasks:
+    - include_vars: ../group_vars/variables.yml
+  tasks:
+
+    # Destroying the Autoscaling group in order to terminate EC2
+    - name: Destroy AutoScaling Group with any running EC2 instances
+      ec2_asg:
+        name:                   "{{ app_name }}"
+        load_balancers:         "{{ app_name }}-lb"
+        availability_zones:     [ "{{ aws_region }}a", "{{ aws_region }}b" ]
+        region:                 "{{ aws_region }}"
+        state:                  "{{ state }}"
+        launch_config_name:     "{{ app_name }}-lc"
+        min_size:               1
+        max_size:               4
+        desired_capacity:       2
+      register: my_asg
+
+   # Destroying the Launch Configuration
+    - name: Destroy Launch Configuration
+      ec2_lc:
+          name:                   "{{ app_name }}-lc"
+          image_id:               "{{ ami_id }}"
+          key_name:               "{{ key_name }}"
+          #security_groups:        ["{{ sg_id }}"]
+          instance_type:          "{{ instance_type }}"
+          state:                  "{{ state }}"
+          #vpc_id:                 "{{ vpc_id }}"
+          assign_public_ip:       "yes"
+          region:                 "{{ aws_region }}"
+      register: my_lc
+
+    # Destroying the Elastic Load Balancer
+    - name: Destroy the ELB only listening over port 80
+      ec2_elb_lb:
+        name:             "{{ app_name }}-lb"
+        state:            "{{ state }}"
+        region:           "{{ aws_region }}"
+        zones:
+        - "{{ aws_region }}a"
+        - "{{ aws_region }}b"
+        listeners:
+          - protocol:           http
+            load_balancer_port: 80
+            instance_port:      80
+      register: my_elb
+
+    # Gather facts about all VPCs
+    - name: Gather facts about our VPC
+      ec2_vpc_net_facts:
+        region:           "{{ aws_region }}"
+        filters:
+          "tag:Name": "{{ vpc_name }}"
+      register:  my_vpc
+
+    #Setting the ID of the VPC required for detroying all dependencies
+    - name:               Set VPC ID in variable
+      set_fact:
+        vpc_id:           "{{ my_vpc.vpcs.0.id }}"
+
+    - name: Destroy public subnet route table
+      ec2_vpc_route_table:
+        vpc_id:           "{{ vpc_id }}"
+        region:           "{{ aws_region }}"
+        state:            "{{ state }}"
+        tags:
+          Name:           "Public"
+
+    # It takes a while for dependencies to clear, so waiting 1 minute before detroying subnets
+    - name: Sleep for 60 seconds and continue with removal of subnets
+      wait_for: timeout=60
+      delegate_to: localhost
+
+    - name: Destroy Subnet 1
+      ec2_vpc_subnet:
+        state:            "{{ state }}"
+        vpc_id:           "{{ vpc_id }}"
+        cidr:             "{{ public_subnet_1_cidr }}"
+        az:               "{{ aws_region }}a"
+        region:           "{{ aws_region }}"
+        resource_tags:
+                Name:     "pub_subnet1"
+      register: my_public_subnet_1
+
+    - name: Destroy Subnet 2
+      ec2_vpc_subnet:
+        state:            "{{ state }}"
+        vpc_id:           "{{ vpc_id }}"
+        cidr:             "{{ public_subnet_2_cidr }}"
+        az:               "{{ aws_region }}b"
+        region:           "{{ aws_region }}"
+        resource_tags:
+                Name:     "pub_subnet2"
+      register: my_public_subnet_2
+
+
+    - name: Destroy the Internet Gateway for VPC
+      ec2_vpc_igw:
+        vpc_id:           "{{ vpc_id }}"
+        region:           "{{ aws_region }}"
+        state:            "{{ state }}"
+      register: my_vpc_igw
+
+    - name: Destroy the Web Security Group
+      ec2_group:
+        name:             "web-security-group"
+        description:      "web security group"
+        vpc_id:           "{{ vpc_id }}"
+        region:           "{{ aws_region }}"
+        state:            "{{ state }}"
+        rules:
+          - proto:        "tcp"
+            from_port:    "22"
+            to_port:      "22"
+            cidr_ip:      "{{ source_ip_range }}"
+          - proto:        "tcp"
+            from_port:    "80"
+            to_port:      "80"
+            cidr_ip:      "{{ source_ip_range }}"
+      register: my_vpc_sg
+
+    # Witout any other dependencies, destroying now the VPC
+    - name: Destroy the VPC
+      ec2_vpc_net:
+        name:             "{{ vpc_name }}"
+        cidr_block:       "{{ vpc_cidr_block }}"
+        region:           "{{ aws_region }}"
+        state:            "{{ state }}"
+        purge_cidrs: yes
+      register: delete_my_vpc

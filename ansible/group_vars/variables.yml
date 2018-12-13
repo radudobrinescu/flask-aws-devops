@@ -1,0 +1,24 @@
+aws_access_key: <enter AWS access key>
+aws_secret_key: <enter AWS secret key>
+aws_region: eu-central-1
+
+#General settings for the application
+app_name: devops-challenge
+
+#VPC information
+vpc_name:      devops_challenge_vpc
+vpc_cidr_block: 10.0.0.0/16
+public_subnet_1_cidr:  10.0.10.0/24
+public_subnet_2_cidr:  10.0.20.0/24
+source_ip_range: 0.0.0.0/0 #Source to be set in security group rules
+
+#Instance information
+# No mapping of AMIs, so please keep the region to eu-central-1
+ami_id: ami-0bdf93799014acdc4 
+instance_type: t2.micro
+key_name: devops_challenge
+key_path: ~/.ssh/
+
+#State of resources - used to provision (value = present) or destroy (value = absent)
+state: present
+

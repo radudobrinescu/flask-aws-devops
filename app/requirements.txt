@@ -1,0 +1,4 @@
+Flask==0.10.1
+SQLAlchemy==0.9.8
+uWSGI==2.0.17.1
+
