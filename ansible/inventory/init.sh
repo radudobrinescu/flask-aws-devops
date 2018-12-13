@@ -16,3 +16,10 @@ pip install -r /var/www/devops_app/app/requirements.txt
 sudo mkdir /var/log/uwsgi
 sudo chown ubuntu:ubuntu /var/log/uwsgi
 uwsgi --ini /var/www/devops_app/web/devops_uwsgi.ini
+
+
+
+
+sudo git clone https://github.com/radudobrinescu/flask-aws-devops.git
+sudo mv flask-aws-devops/ devops_app/
+sudo devops_app/ansible/inventory/init.sh
