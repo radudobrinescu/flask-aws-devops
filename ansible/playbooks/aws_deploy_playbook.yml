@@ -137,13 +137,6 @@
         vpc_id:                   "{{ vpc_id }}"
         protocol:                 HTTP
         port:                     80
-        #health_check_interval:    '{{ health_check_interval }}'
-        #health_check_path:        '{{ health_check_path }}'
-        #health_check_port:        '{{ health_check_port }}'
-        #health_check_protocol:    '{{ health_check_protocol }}'
-        #health_check_timeout:     '{{ health_check_timeout }}'
-        #healthy_threshold_count:  '{{ healthy_threshold_count }}'
-        #unhealthy_threshold_count:'{{ unhealthy_threshold_count }}'
       register: tg
 
 
@@ -170,8 +163,6 @@
 
    # We will also setup a AutoScaling group. The solution can be futher improved by adding scaling policies
     - name: Create new Launch Configuration
-      tags:
-         - stop_first
       ec2_lc:
           name:                   "{{ app_name }}-lc"
           image_id:               "{{ ami_id }}"
@@ -186,8 +177,6 @@
 
 
     - name: Create an AutoScaling Group
-      tags:
-         - stop_first
       ec2_asg:
         name:                   "{{ app_name }}"
         #load_balancers:         "{{ app_name }}-lb"

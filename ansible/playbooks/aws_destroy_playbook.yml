@@ -19,9 +19,9 @@
         region:                 "{{ aws_region }}"
         state:                  "{{ state }}"
         launch_config_name:     "{{ app_name }}-lc"
-        min_size:               1
-        max_size:               4
-        desired_capacity:       2
+        #min_size:               1
+        #max_size:               4
+        #desired_capacity:       2
       register: my_asg
 
    # Destroying the Launch Configuration
@@ -53,17 +53,6 @@
             instance_port:      80
       register: my_elb
 
-    - name: Destroy the target group
-      elb_target_group:
-        name:                     "{{ app_name }}-tg"
-        state:                    "{{ state }}"
-        region:                   "{{ aws_region }}"
-        vpc_id:                   "{{ vpc_id }}"
-        protocol:                 HTTP
-        port:                     80
-      register: tg
-
-
     # Gather facts about all VPCs
     - name: Gather facts about our VPC
       ec2_vpc_net_facts:
@@ -76,6 +65,17 @@
     - name:               Set VPC ID in variable
       set_fact:
         vpc_id:           "{{ my_vpc.vpcs.0.id }}"
+
+    - name: Destroy the target group
+      elb_target_group:
+        name:                     "{{ app_name }}-tg"
+        state:                    "{{ state }}"
+        region:                   "{{ aws_region }}"
+        vpc_id:                   "{{ vpc_id }}"
+        protocol:                 HTTP
+        port:                     80
+      register: tg
+
 
     - name: Destroy public subnet route table
       ec2_vpc_route_table:
@@ -127,15 +127,6 @@
         vpc_id:           "{{ vpc_id }}"
         region:           "{{ aws_region }}"
         state:            "{{ state }}"
-        rules:
-          - proto:        "tcp"
-            from_port:    "22"
-            to_port:      "22"
-            cidr_ip:      "{{ source_ip_range }}"
-          - proto:        "tcp"
-            from_port:    "80"
-            to_port:      "80"
-            group_id:      "{{ lb_sg_id }}"
       register: my_vpc_sg
 
 
@@ -146,15 +137,6 @@
         vpc_id:           "{{ vpc_id }}"
         region:           "{{ aws_region }}"
         state:            "{{ state }}"
-        rules:
-          - proto:        "tcp"
-            from_port:    "22"
-            to_port:      "22"
-            cidr_ip:      "{{ source_ip_range }}"
-          - proto:        "tcp"
-            from_port:    "80"
-            to_port:      "80"
-            cidr_ip:      "{{ source_ip_range }}"
       register: my_vpc_sg
 
     # Witout any other dependencies, destroying now the VPC
