@@ -100,11 +100,11 @@
             from_port:    "80"
             to_port:      "80"
             cidr_ip:      "{{ source_ip_range }}"
-      register: my_vpc_sg
+      register: web_vpc_sg
 
     - name:               Set Security Group ID in variable
       set_fact:
-        lb_sg_id:           "{{ my_vpc_sg.group_id }}"
+        lb_sg_id:           "{{ web_vpc_sg.group_id }}"
 
     # Creating the Security group. This governs traffic for both LBR and EC2 instances
     - name:               Create Application Security Group
@@ -123,11 +123,11 @@
             from_port:    "80"
             to_port:      "80"
             group_id:      "{{ lb_sg_id }}"
-      register: my_vpc_sg
+      register: app_vpc_sg
 
     - name:               Set Security Group ID in variable
       set_fact:
-        app_sg_id:           "{{ my_vpc_sg.group_id }}"
+        app_sg_id:           "{{ app_vpc_sg.group_id }}"
 
     - name: Create a new target group
       elb_target_group:
