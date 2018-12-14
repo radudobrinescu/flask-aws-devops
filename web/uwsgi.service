@@ -3,17 +3,13 @@ Description=uWSGI Emperor
 After=network.target
 
 [Service]
-Group=ubuntu
-User=ubuntu
-ExecStart=/usr/local/bin/uwsgi --ini /var/www/devops_app/web/devops_uwsgi.ini
+ExecStart=/var/www/devops_app/app/venv/bin/uwsgi --uid ubuntu --gid ubuntu --ini /var/www/devops_app/web/devops_uwsgi.ini
 # Requires systemd version 211 or newer
 RuntimeDirectory=uwsgi
 RuntimeDirectoryMode=0775
 Restart=always
 KillSignal=SIGQUIT
 Type=notify
-# dont log to syslog, follow logto
-# StandardError=syslog
 NotifyAccess=all
 
 [Install]
