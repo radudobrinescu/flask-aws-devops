@@ -4,7 +4,7 @@ After=network.target
 
 [Service]
 Group=ubuntu
-ExecStart=/var/www/devops_app/app/venv/bin/uwsgi --ini /var/www/devops_app/web/devops_uwsgi.ini
+ExecStart=/var/www/devops_app/app/bin/uwsgi --ini /var/www/devops_app/web/devops_uwsgi.ini
 # Requires systemd version 211 or newer
 RuntimeDirectory=uwsgi
 RuntimeDirectoryMode=0775
