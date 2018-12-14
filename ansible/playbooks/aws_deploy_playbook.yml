@@ -173,6 +173,7 @@
           vpc_id:                 "{{ vpc_id }}"
           assign_public_ip:       "yes"
           region:                 "{{ aws_region }}"
+          user_data:              "{{ lookup('file', '../inventory/user_data.sh') }}"
       register: my_lc
 
 
@@ -191,14 +192,9 @@
         vpc_zone_identifier: [ "{{ public_subnet1_id }}", "{{ public_subnet2_id }}" ]
       register: my_asg
 
-
-# Amazon instance is set up and running. We can now apply roles to it
-#  - name: Configure the instance
-#    hosts: launched
-#    sudo: yes
-#    remote_user: ubuntu
-#    gather_facts: yes
-#    roles:
-#      - common
-#      - nginx
-#      - flask-dummy
+    # Gather facts about the LB to get the DNS name
+    - name: Gather facts about the Load Balancer
+      elb_application_lb_facts:
+        region:           "{{ aws_region }}"
+        names:            "{{ app_name }}-lb"
+      register:  my_app_lb

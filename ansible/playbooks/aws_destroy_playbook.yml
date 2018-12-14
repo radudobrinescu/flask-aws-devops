@@ -38,19 +38,12 @@
           region:                 "{{ aws_region }}"
       register: my_lc
 
-    # Destroying the Elastic Load Balancer
-    - name: Destroy the ELB only listening over port 80
-      ec2_elb_lb:
+    # Destroy the application Load Balancer
+    - name: Destroy the ELB
+      elb_application_lb:
         name:             "{{ app_name }}-lb"
         state:            "{{ state }}"
         region:           "{{ aws_region }}"
-        zones:
-        - "{{ aws_region }}a"
-        - "{{ aws_region }}b"
-        listeners:
-          - protocol:           http
-            load_balancer_port: 80
-            instance_port:      80
       register: my_elb
 
     # Gather facts about all VPCs
