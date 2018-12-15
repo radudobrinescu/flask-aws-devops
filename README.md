@@ -10,8 +10,8 @@ A non-administrative user with the following permissions is required:
 
 1. AmazonEC2FullAccess, AmazonDynamoDBFullAccess
 
-2. In order to pass this role to EC2 instances, your AWS user will need the PassRole permissions. See this link for details on how to set it up
-https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_use_switch-role-ec2.html
+2. In order to pass this role to EC2 instances, your AWS user will need the PassRole permissions. This document shows you how to set it up: 
+<a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_use_switch-role-ec2.html#roles-usingrole-ec2instance-permissions" target="_blank">Permissions Required for Using Roles with Amazon EC2</a>
 
 3. The EC2 instances need access to DynamoDB. You can use the same role as in step 1, or one with just AmazonDynamoDBFullAccess. Either way, the "Instance Profile ARN" of the role must be entered in the ansible variables file.
 
@@ -55,7 +55,7 @@ curl -X PUT http://devops-challenge-lb-<some_name>.amazonaws.com/hello/John  \
 -H 'content-type: application/json' \
 -d '{"dateOfBirth": "15-12-1976"}'
 ```
-Checking that the data has indeed changed. This can also be checked in the DynamoDB in the AWS console.
+Checking that the data has indeed changed. This can also be checked in DynamoDB in the AWS console.
 ```
 curl -X GET http://devops-challenge-lb-<some_name>.amazonaws.com/hello/John
 {
