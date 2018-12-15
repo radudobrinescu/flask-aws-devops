@@ -1,3 +1,4 @@
+# Not required if set in aws-cli credentials file
 aws_access_key: <enter AWS access key>
 aws_secret_key: <enter AWS secret key>
 aws_region: eu-central-1
@@ -15,7 +16,7 @@ source_ip_range: 0.0.0.0/0 #Source to be set in security group rules
 #Instance information
 # No mapping of AMIs, so please keep the region to eu-central-1
 ami_id: ami-0bdf93799014acdc4
-instance_profile_name: ec2_accessto_dynamodb 
+instance_profile_arn: arn:aws:iam::049581233739:instance-profile/ec2_accessto_dynamodb
 instance_type: t2.micro
 key_name: devops_challenge
 key_path: ~/.ssh/
