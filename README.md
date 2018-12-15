@@ -1,6 +1,6 @@
-# How to
+Python, Flask application that implements two simple REST methods (GET, PUT) on top of AWS infrastructure.
 
-The below instructions show you how to
+![](ArchitectureDiagram.png "ArchitectureDiagram")
 
 ## Prerequisites
 You will need to below resources configured:
@@ -35,15 +35,27 @@ ansible-playbook -v aws_deploy_playbook.yml
 
 The last output will give you the DNS Name of the Load Balancer on which the application can be tested.
 
-GET:
 
+## Testing the application
 
-POST:
-
-## Test the application
-
-
-
+Performing a GET to retrieve the date of birth of a user:
+```
+curl -X GET http://devops-challenge-lb-690179727.eu-central-1.elb.amazonaws.com/hello/John
+{
+  "message": "Hello, John! Your birthday is in 59 days."
+}
+```
+Changing the date of birth by submitting it in a json payload:
+```
+curl -X PUT http://devops-challenge-lb-690179727.eu-central-1.elb.amazonaws.com/hello/John  -H 'content-type: application/json' -d '{"dateOfBirth": "15-12-1976"}'
+```
+Checking that the data has indeed changed. This can also be checked in the DynamoDB in the AWS console.
+```
+curl -X GET http://devops-challenge-lb-690179727.eu-central-1.elb.amazonaws.com/hello/John
+{
+  "message": "Hello, John! Happy birthday!"
+}
+```
 
 ## Destroy the AWS infrastructure
 ansible-playbook -v aws_destroy_playbook.yml -e state=absent
