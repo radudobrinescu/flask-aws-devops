@@ -6,12 +6,14 @@ The below instructions show you how to
 You will need to below resources configured:
 
 #### AWS Account:
-AWS account and credentials for a user with full access to EC2 and DynamoDB:
-AmazonEC2FullAccess, AmazonDynamoDBFullAccess
+The resources can be created with a non-administrative user. However, there are some requirements for this user:
+1. A role with the following permissions:
+  AmazonEC2FullAccess, AmazonDynamoDBFullAccess
 
-Create a new role with the AmazonDynamoDBFullAccess policy. Make sure to set the name of the role in the ansible variables file later on. 
-In order to pass this role to EC2 instances, your AWS user will need the PassRole permissions. See this link for details:
+2. In order to pass this role to EC2 instances, your AWS user will need the PassRole permissions. See this link for details:
 https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_use_switch-role-ec2.html
+
+3. You can use the same role as in step 1, or another one with just AmazonDynamoDBFullAccess policy. Make sure to set the Instance Profile ARNs of the role in the ansible variables file. This role will be passed to EC2 instances in order to authenticate against DynamoDB.
 
 #### Ansible control machine
 Packages installed: ansible, boto, python-virtualen (if you rather use a virtual env)
@@ -22,7 +24,6 @@ In order to test the application, create a DynamoDB table and add some data by t
 aws dynamodb create-table --cli-input-json file://create-table.json
 aws dynamodb batch-write-item --request-items file://batch-write.json
 
-
 ## Provision the AWS infrastructure with Ansible
 You will need to run the Ansible scripts on a control machine (laptop or VM)
 
@@ -32,19 +33,17 @@ There is no AMI mapping per regions, so the playbook will only work in eu-centra
 To provision the infrastructure:
 ansible-playbook -v aws_deploy_playbook.yml
 
+The last output will give you the DNS Name of the Load Balancer on which the application can be tested.
 
-## Test the applicaton
+GET:
 
 
-## Update the application deployment with Ansible
+POST:
+
+## Test the application
+
+
 
 
 ## Destroy the AWS infrastructure
-
 ansible-playbook -v aws_destroy_playbook.yml -e state=absent
-
-user-data:
-sudo git clone https://github.com/radudobrinescu/flask-aws-devops.git
-sudo mv flask-aws-devops/ devops_app/
-sudo chmod u+x devops_app/ansible/inventory/init.sh
-sudo devops_app/ansible/inventory/init.sh
