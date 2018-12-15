@@ -57,7 +57,6 @@
       wait_for: timeout=60
       delegate_to: localhost
 
-
     - name: Destroy the target group
       elb_target_group:
         name:                     "{{ app_name }}-tg"
@@ -68,7 +67,6 @@
         port:                     80
       register: tg
 
-
     - name: Destroy public subnet route table
       ec2_vpc_route_table:
         vpc_id:           "{{ vpc_id }}"
@@ -76,7 +74,6 @@
         state:            "{{ state }}"
         tags:
           Name:           "Public"
-
 
     - name: Destroy Subnet 1
       ec2_vpc_subnet:
@@ -100,7 +97,6 @@
                 Name:     "pub_subnet2"
       register: my_public_subnet_2
 
-
     - name: Destroy the Internet Gateway for VPC
       ec2_vpc_igw:
         vpc_id:           "{{ vpc_id }}"
@@ -116,7 +112,6 @@
         region:           "{{ aws_region }}"
         state:            "{{ state }}"
       register: my_vpc_sg
-
 
     - name: Destroy the Web Security Group
       ec2_group:

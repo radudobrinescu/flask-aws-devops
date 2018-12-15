@@ -12,8 +12,6 @@
 
     # Firstly creating a new VPC for the Application
     - name:               Create VPC
-      tags:
-        - stop_second
       ec2_vpc_net:
         name:             "{{ vpc_name }}"
         cidr_block:       "{{ vpc_cidr_block }}"
@@ -71,7 +69,6 @@
     - name:               Set Internet Gateway ID in variable
       set_fact:
         igw_id:           "{{ my_vpc_igw.gateway_id }}"
-
 
     # Now we set up a Route Table.
     - name:               Set up public subnet route table
@@ -151,9 +148,6 @@
         subnets:
         - "{{ public_subnet1_id }}"
         - "{{ public_subnet2_id }}"
-#        zones:
-#        - "{{ aws_region }}a"
-#        - "{{ aws_region }}b"
         listeners:
           - Protocol:           HTTP
             Port:               80
@@ -162,7 +156,7 @@
                 TargetGroupName: "{{ tg.target_group_name}}"
       register: my_elb
 
-   # We will also setup a AutoScaling group. The solution can be futher improved by adding scaling policies
+    # We will also setup a AutoScaling group. The solution can be futher improved by adding scaling policies
     - name: Create new Launch Configuration
       ec2_lc:
           name:                   "{{ app_name }}-lc"
