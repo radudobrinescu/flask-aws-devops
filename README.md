@@ -20,10 +20,10 @@ Packages installed: ansible, boto, python-virtualen (if you rather use a virtual
 AWS credentials must be added to ~/.aws/credentials
 
 In order to test the application, create a DynamoDB table and add some data by the following commands:
-
+```
 aws dynamodb create-table --cli-input-json file://create-table.json
 aws dynamodb batch-write-item --request-items file://batch-write.json
-
+```
 ## Provision the AWS infrastructure with Ansible
 You will need to run the Ansible scripts on a control machine (laptop or VM)
 
@@ -31,31 +31,33 @@ Change any variable in ansible/group-vars/variables.yml
 There is no AMI mapping per regions, so the playbook will only work in eu-central-1
 
 To provision the infrastructure:
+```
 ansible-playbook -v aws_deploy_playbook.yml
-
+```
 The last output will give you the DNS Name of the Load Balancer on which the application can be tested.
-
 
 ## Testing the application
 
 Performing a GET to retrieve the date of birth of a user:
 ```
-curl -X GET http://devops-challenge-lb-690179727.eu-central-1.elb.amazonaws.com/hello/John
+curl -X GET http://devops-challenge-lb-<some_name>.amazonaws.com/hello/John
 {
   "message": "Hello, John! Your birthday is in 59 days."
 }
 ```
 Changing the date of birth by submitting it in a json payload:
 ```
-curl -X PUT http://devops-challenge-lb-690179727.eu-central-1.elb.amazonaws.com/hello/John  -H 'content-type: application/json' -d '{"dateOfBirth": "15-12-1976"}'
+curl -X PUT http://devops-challenge-lb-<some_name>.amazonaws.com/hello/John  -H 'content-type: application/json' -d '{"dateOfBirth": "15-12-1976"}'
 ```
 Checking that the data has indeed changed. This can also be checked in the DynamoDB in the AWS console.
 ```
-curl -X GET http://devops-challenge-lb-690179727.eu-central-1.elb.amazonaws.com/hello/John
+curl -X GET http://devops-challenge-lb-<some_name>.amazonaws.com/hello/John
 {
   "message": "Hello, John! Happy birthday!"
 }
 ```
 
 ## Destroy the AWS infrastructure
+```
 ansible-playbook -v aws_destroy_playbook.yml -e state=absent
+```
