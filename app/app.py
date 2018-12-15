@@ -3,9 +3,7 @@ from datetime import datetime as dt
 from boto3.dynamodb.conditions import Key, Attr
 import boto3
 
-dynamodb = boto3.resource('dynamodb', region_name='eu-central-1',
-                          aws_access_key_id='AKIAIK6LKUT2WGBYQCCA',
-                          aws_secret_access_key='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')
+dynamodb = boto3.resource('dynamodb', region_name='eu-central-1',)
 
 table = dynamodb.Table('People')
 
