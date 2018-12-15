@@ -175,7 +175,7 @@
           assign_public_ip:       "yes"
           region:                 "{{ aws_region }}"
           user_data:              "{{ lookup('file', '../inventory/user_data.sh') }}"
-          instance_profile_name:  "{{ instance_profile_name }}"
+          instance_profile_name:  "{{ instance_profile_arn }}"
       register: my_lc
 
     - name: Create an AutoScaling Group
@@ -196,4 +196,4 @@
     # Gather facts about the LB to get the DNS name
     - name: Gather facts about the Load Balancer
       debug:
-        var:   my_elb.dns_name        
+        var:   my_elb.dns_name
