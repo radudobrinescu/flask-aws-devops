@@ -1,0 +1,41 @@
+{
+  "People": [
+    {
+      "PutRequest": {
+        "Item":
+        {
+          "Username": {
+            "S": "John"
+          },
+          "dateOfBirth": {
+            "S": "11-12-1976"
+          }
+        }
+      }
+    },
+    {
+      "PutRequest": {
+        "Item": {
+          "Username": {
+            "S": "Larry"
+          },
+          "dateOfBirth": {
+            "S": "12-12-1976"
+          }
+        }
+      }
+    },
+    {
+      "PutRequest": {
+        "Item" : {
+          "Username": {
+            "S": "Harry"
+          },
+          "dateOfBirth": {
+            "S": "11-12-1976"
+          }
+        }
+      }
+    }
+  ]
+}

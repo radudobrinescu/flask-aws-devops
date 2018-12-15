@@ -54,20 +54,24 @@ def message(birthdate):
 
 def update_entry(user):
     update_req = request.json
-    table.update_item(
-        Key={
-            'Username': user,
-        },
-        ReturnValues='UPDATED_NEW',
-        UpdateExpression="set dateOfBirth = :var",
-        ConditionExpression=Attr('Username').eq(user),
-        ExpressionAttributeValues={
-            ':var': update_req['dateOfBirth']
-        }
-    )
-
-    resp = Response(status=204, mimetype="application/json")
-    return resp
+    try:
+        dt.strptime(update_req['dateOfBirth'], "%d-%m-%Y")
+        table.update_item(
+            Key={
+                'Username': user,
+            },
+            ReturnValues='UPDATED_NEW',
+            UpdateExpression="set dateOfBirth = :var",
+            ConditionExpression=Attr('Username').eq(user),
+            ExpressionAttributeValues={
+                ':var': update_req['dateOfBirth']
+            }
+        )
+        resp = Response(status=204, mimetype="application/json")
+        return resp
+    except:
+        resp = jsonify({"message": "Update not performed. Check that the user exists and that the date is valid"})
+        return resp
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)

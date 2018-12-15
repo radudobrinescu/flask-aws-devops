@@ -1,6 +1,6 @@
 Python, Flask application that implements two simple REST methods (GET, PUT) on top of AWS infrastructure.
 
-![](ArchitectureDiagram.png "ArchitectureDiagram")
+![](ArchitectureDiagram.jpg "ArchitectureDiagram")
 
 ## Prerequisites
 You will need to below resources configured:
