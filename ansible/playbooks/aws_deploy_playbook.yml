@@ -190,6 +190,7 @@
         min_size:               1
         max_size:               4
         desired_capacity:       2
+        wait_for_instances:     false
         vpc_zone_identifier: [ "{{ public_subnet1_id }}", "{{ public_subnet2_id }}" ]
       register: my_asg
 

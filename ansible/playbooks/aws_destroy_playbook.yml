@@ -1,6 +1,5 @@
 ---
-### Playbook to provision the AWS infrastructure for the Application
-### There is no mapping of AMIs to regions in the variable file - only eu-central-1 region at this timeout
+### Playbook to destroy the AWS infrastructure for the Application
 
 - hosts: localhost
   connection: local
@@ -10,6 +9,13 @@
     - include_vars: ../group_vars/variables.yml
   tasks:
 
+    - name: Destroy the ELB
+      elb_application_lb:
+        name:             "{{ app_name }}-lb"
+        state:            "{{ state }}"
+        region:           "{{ aws_region }}"
+      register: my_elb
+
     # Destroying the Autoscaling group in order to terminate EC2
     - name: Destroy AutoScaling Group with any running EC2 instances
       ec2_asg:
@@ -18,10 +24,8 @@
         availability_zones:     [ "{{ aws_region }}a", "{{ aws_region }}b" ]
         region:                 "{{ aws_region }}"
         state:                  "{{ state }}"
+        wait_for_instances:     false
         launch_config_name:     "{{ app_name }}-lc"
-        #min_size:               1
-        #max_size:               4
-        #desired_capacity:       2
       register: my_asg
 
    # Destroying the Launch Configuration
@@ -30,21 +34,11 @@
           name:                   "{{ app_name }}-lc"
           image_id:               "{{ ami_id }}"
           key_name:               "{{ key_name }}"
-          #security_groups:        ["{{ sg_id }}"]
           instance_type:          "{{ instance_type }}"
           state:                  "{{ state }}"
-          #vpc_id:                 "{{ vpc_id }}"
           assign_public_ip:       "yes"
           region:                 "{{ aws_region }}"
       register: my_lc
-
-    # Destroy the application Load Balancer
-    - name: Destroy the ELB
-      elb_application_lb:
-        name:             "{{ app_name }}-lb"
-        state:            "{{ state }}"
-        region:           "{{ aws_region }}"
-      register: my_elb
 
     # Gather facts about all VPCs
     - name: Gather facts about our VPC
@@ -58,6 +52,11 @@
     - name:               Set VPC ID in variable
       set_fact:
         vpc_id:           "{{ my_vpc.vpcs.0.id }}"
+
+    - name: Waiting for 60 for ELB listener to be removed...
+      wait_for: timeout=60
+      delegate_to: localhost
+
 
     - name: Destroy the target group
       elb_target_group:
@@ -78,10 +77,6 @@
         tags:
           Name:           "Public"
 
-    # It takes a while for dependencies to clear, so waiting 1 minute before detroying subnets
-    - name: Sleep for 60 seconds and continue with removal of subnets
-      wait_for: timeout=60
-      delegate_to: localhost
 
     - name: Destroy Subnet 1
       ec2_vpc_subnet:
