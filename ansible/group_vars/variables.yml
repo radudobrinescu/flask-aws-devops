@@ -14,11 +14,11 @@ source_ip_range: 0.0.0.0/0 #Source to be set in security group rules
 
 #Instance information
 # No mapping of AMIs, so please keep the region to eu-central-1
-ami_id: ami-0bdf93799014acdc4 
+ami_id: ami-0bdf93799014acdc4
+instance_profile_name: ec2_accessto_dynamodb 
 instance_type: t2.micro
 key_name: devops_challenge
 key_path: ~/.ssh/
 
 #State of resources - used to provision (value = present) or destroy (value = absent)
 state: present
-

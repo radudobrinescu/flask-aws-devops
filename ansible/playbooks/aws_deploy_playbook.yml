@@ -9,6 +9,7 @@
   pre_tasks:
     - include_vars: ../group_vars/variables.yml
   tasks:
+
     # Firstly creating a new VPC for the Application
     - name:               Create VPC
       tags:
